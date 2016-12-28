@@ -14,6 +14,8 @@ import json
 #url = 'https://your_subdomain.zendesk.com/api/v2/groups.json'
 #user = 'your_email_address'
 #pwd = 'your_password'
+#user = 'your_email_address' + '/token'
+#pwd = 'your_api_token'
 #
 ## Do the HTTP get request
 #response = requests.get(url, auth=(user, pwd))
@@ -35,12 +37,12 @@ import json
 #    print(group['name'])
 #
 
-def queryZenDesk(cfgFilename, clientid, clientsecret, zenDeskUser, zenDeskPassword):
+def queryZenDesk(cfgFilename, clientid, clientsecret, zenDeskUsername, zenDeskPassword):
     # Set up JSON prettyPrinting
     pp = pprint.PrettyPrinter(indent=4)
     
     # Setup to obtain Get authorization-token
-    authTokenUrl = "https://usoauth.plutora.com/oauth/token"
+    authTokenUrl = "https://usoauth.zenDesk.com/oauth/token"
     payload = 'client_id=' + clientid + '&client_secret=' + clientsecret + '&grant_type=password&username='
     payload = payload + zenDeskUsername + '&password=' + zenDeskPassword + '&='
     headers = {
@@ -61,9 +63,9 @@ def queryZenDesk(cfgFilename, clientid, clientsecret, zenDeskUser, zenDeskPasswo
         accessToken = authResponse.json()["access_token"]
     
     # Setup to query Maersk zenDesk instances
-    plutoraBaseUrl= 'https://usapi.plutora.com'
-    plutoraMaerskUrl = r'http://maersk.plutora.com/changes/12/comments'
-    plutoraMaerskTestUrl = r'https://usapi.plutora.com/me'
+    zenDeskBaseUrl= 'https://usapi.zenDesk.com'
+    zenDeskMaerskUrl = r'http://maersk.zenDesk.com/changes/12/comments'
+    zenDeskMaerskTestUrl = r'https://usapi.zenDesk.com/me'
     #jiraURL = r'http://localhost:8080/rest/api/2/search?jql=project="DemoRevamp"&expand'
     headers = {
         'content-type': "application/x-www-form-urlencoded",
@@ -77,7 +79,7 @@ def queryZenDesk(cfgFilename, clientid, clientsecret, zenDeskUser, zenDeskPasswo
     getSystems = '/systems'
     getOrganizationsTree = '/organizations/tree'
     
-    r = requests.get(plutoraBaseUrl+getOrganizationsTree, data=payload, headers=headers)
+    r = requests.get(zenDeskBaseUrl+getOrganizationsTree, data=payload, headers=headers)
     if r.status_code != 200:
         print('Get release status code: %i' % r.status_code)
         print('\npltSystemCreate.py: too bad sucka! - [failed on zenDesk get]')
@@ -96,7 +98,7 @@ def queryZenDesk(cfgFilename, clientid, clientsecret, zenDeskUser, zenDeskPasswo
         print("header: ",headers)
         print("payload: ",payload)
         
-        r = requests.post(plutoraBaseUrl+postSystem, data=payload, headers=headers)
+        r = requests.post(zenDeskBaseUrl+postSystem, data=payload, headers=headers)
         if r.status_code != 200:
             print('Post new system status code: %i' % r.status_code)
             print('\npltSystemCreate.py: too bad sucka! - [failed on zenDesk create system POST]')
@@ -113,7 +115,7 @@ def queryZenDesk(cfgFilename, clientid, clientsecret, zenDeskUser, zenDeskPasswo
 # Residual stuff follows:
 #for i in r.json()["issues"]:
 #    print("field is", i["fields"]["description"])
-#    r = requests.post(plutoraMaerskUrl, data=i["fields"]["description"], headers=headers)
+#    r = requests.post(zenDeskMaerskUrl, data=i["fields"]["description"], headers=headers)
 #    if r.status_code != 200:
 #       print "Error inserting record into zenDesk:", i, r.status_code
 #       exit('Cant insert into zenDesk')
@@ -128,13 +130,13 @@ if __name__ == '__main__':
     #   help='JIRA and zenDesk logins (username:password)')
     parser.add_argument('-f', action='store', dest='config_filename',
                         help='Config filename ')
-    parser.add_argument('-p', action='store', dest='pltUnP',
+    parser.add_argument('-p', action='store', dest='zdUnP',
                         help='zenDesk username:password')
     results = parser.parse_args()
 
     config_filename = results.config_filename.split(':')[0]
-    plutora_username = results.pltUnP.split(':')[0].replace('@', '%40')
-    plutora_password = results.pltUnP.split(':')[1]
+    zenDesk_username = results.zdUnP.split(':')[0].replace('@', '%40')
+    zenDesk_password = results.zdUnP.split(':')[1]
 
     # If we don't specify a configfile on the commandline, assume one & try accessing
     if len(config_filename) <= 0:
@@ -151,6 +153,6 @@ if __name__ == '__main__':
         print "EXCEPTION: %s " % ex.msg
         exit('couldnt open file {0}'.format(config_filename))
 
-    queryZenDesk(config_filename, client_id, client_secret, plutora_username, plutora_password)
+    queryZenDesk(config_filename, client_id, client_secret, zenDesk_username, zenDesk_password)
 
     print("\n\nWell, it seems we're all done here, boys; time to pack up and go home...")
